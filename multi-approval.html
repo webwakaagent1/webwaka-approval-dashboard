@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebWaka Multi-Approval Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .card-header h2 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .bulk-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-not-started {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .status-in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-complete {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .approval-status-pending {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .approval-status-approved {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .approval-status-not-ready {
+            color: #6c757d;
+        }
+
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .checkbox-cell input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .action-cell {
+            width: 120px;
+        }
+
+        .btn-approve {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #28a745;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #dee2e6;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .phase-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .phase-list li {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .bulk-actions {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 14px;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 WebWaka Multi-Approval Dashboard</h1>
+            <p>Manage all phase approvals in one place</p>
+        </div>
+
+        <div class="dashboard-card">
+            <div class="card-header">
+                <h2>All Phases</h2>
+                <div class="bulk-actions">
+                    <div class="auto-refresh">
+                        <span class="refresh-indicator">Auto-refresh: <span id="countdown">30</span>s</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="selectAll()">Select All Pending</button>
+                    <button class="btn btn-primary" id="bulkApproveBtn" onclick="showBulkApprovalModal()" disabled>
+                        Approve Selected (<span id="selectedCount">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="phasesTable">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()">
+                            </th>
+                            <th>Phase</th>
+                            <th>Status</th>
+                            <th>Approval Status</th>
+                            <th>Last Updated</th>
+                            <th class="action-cell">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="phasesBody">
+                        <tr>
+                            <td colspan="6" class="loading">Loading phases...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Approval Modal -->
+    <div class="modal" id="bulkApprovalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Confirm Bulk Approval</h3>
+                <button class="modal-close" onclick="closeBulkApprovalModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>You are about to approve the following phases:</p>
+                <ul class="phase-list" id="bulkPhaseList"></ul>
+                <div class="warning-box">
+                    <strong>⚠️ Warning:</strong> This action will approve all selected phases simultaneously. 
+                    Please ensure you have reviewed all phases before proceeding.
+                </div>
+                <p><strong>Total phases to approve:</strong> <span id="bulkCount">0</span></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBulkApprovalModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="processBulkApproval()">Confirm Bulk Approval</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let phasesData = [];
+        let refreshInterval;
+        let countdownInterval;
+
+        // Fetch and display phases
+        async function loadPhases() {
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/webwakaagent1/webwaka-execution-control/main/EXECUTION_LEDGER.md');
+                const content = await response.text();
+                
+                // Parse phases from ledger
+                phasesData = parsePhases(content);
+                displayPhases();
+            } catch (error) {
+                console.error('Error loading phases:', error);
+                document.getElementById('phasesBody').innerHTML = '<tr><td colspan="6" class="loading">Error loading phases. Please refresh the page.</td></tr>';
+            }
+        }
+
+        function parsePhases(content) {
+            const phases = [];
+            const phaseRegex = /###\s+(.+?)\n\n\*\*Status:\*\*\s+`(.+?)`/g;
+            let match;
+
+            while ((match = phaseRegex.exec(content)) !== null) {
+                const phaseName = match[1];
+                const status = match[2];
+                
+                // Extract phase section
+                const sectionStart = match.index;
+                const nextPhaseMatch = content.substring(sectionStart + 1).search(/###\s+/);
+                const sectionEnd = nextPhaseMatch === -1 ? content.length : sectionStart + nextPhaseMatch + 1;
+                const section = content.substring(sectionStart, sectionEnd);
+                
+                // Extract dates
+                const startedMatch = section.match(/\*\*Started:\*\*\s+(.+?)(?:\n|$)/);
+                const updatedMatch = section.match(/\*\*Last Updated:\*\*\s+(.+?)(?:\n|$)/);
+                
+                // Check if approved
+                const approvalPattern = new RegExp(`- \\*\\*Phase:\\*\\*\\s+${phaseName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+\\*\\*approved\\*\\*`, 'i');
+                const isApproved = approvalPattern.test(content);
+                
+                phases.push({
+                    name: phaseName,
+                    status: status,
+                    started: startedMatch ? startedMatch[1] : '-',
+                    lastUpdated: updatedMatch ? updatedMatch[1] : '-',
+                    isApproved: isApproved,
+                    isPending: status === 'complete' && !isApproved
+                });
+            }
+
+            return phases;
+        }
+
+        function displayPhases() {
+            const tbody = document.getElementById('phasesBody');
+            
+            if (phasesData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="loading">No phases found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = phasesData.map((phase, index) => {
+                const statusClass = `status-${phase.status.replace('_', '-')}`;
+                const approvalStatus = phase.isApproved ? 'Approved ✅' : (phase.isPending ? 'Pending ⏳' : 'Not Ready');
+                const approvalClass = phase.isApproved ? 'approval-status-approved' : (phase.isPending ? 'approval-status-pending' : 'approval-status-not-ready');
+                const canApprove = phase.isPending;
+                
+                return `
+                    <tr>
+                        <td class="checkbox-cell">
+                            <input type="checkbox" 
+                                   class="phase-checkbox" 
+                                   data-index="${index}"
+                                   ${canApprove ? '' : 'disabled'}
+                                   onchange="updateSelectedCount()">
+                        </td>
+                        <td><strong>${phase.name}</strong></td>
+                        <td><span class="status-badge ${statusClass}">${phase.status}</span></td>
+                        <td class="${approvalClass}">${approvalStatus}</td>
+                        <td>${phase.lastUpdated}</td>
+                        <td class="action-cell">
+                            <button class="btn btn-primary btn-approve" 
+                                    onclick="approvePhase(${index})"
+                                    ${canApprove ? '' : 'disabled'}>
+                                Approve
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            updateSelectedCount();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAllCheckbox').checked;
+            const checkboxes = document.querySelectorAll('.phase-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = selectAll);
+            updateSelectedCount();
+        }
+
+        function selectAll() {
+            const checkboxes = document.querySelectorAll('.phase-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => cb.checked = true);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const selected = document.querySelectorAll('.phase-checkbox:checked').length;
+            document.getElementById('selectedCount').textContent = selected;
+            document.getElementById('bulkApproveBtn').disabled = selected === 0;
+        }
+
+        function approvePhase(index) {
+            const phase = phasesData[index];
+            const repoUrl = 'https://github.com/webwakaagent1/webwaka-execution-control';
+            const issueTitle = encodeURIComponent(`Approve ${phase.name}`);
+            const issueBody = encodeURIComponent(`## Approval Request
+
+**Phase:** ${phase.name}
+**Status:** ${phase.status}
+**Last Updated:** ${phase.lastUpdated}
+
+### Approval
+
+I have reviewed the phase deliverables and confirm that all exit criteria have been met.
+
+**Approved by:** @webwakaagent1
+**Approval date:** ${new Date().toISOString().split('T')[0]}
+
+**Notes:**
+<!-- Add any additional comments here -->
+
+---
+
+/approve ${phase.name}`);
+            
+            const issueUrl = `${repoUrl}/issues/new?title=${issueTitle}&body=${issueBody}&labels=approval,${phase.name.toLowerCase().replace(/\s+/g, '-')}`;
+            window.open(issueUrl, '_blank');
+        }
+
+        function showBulkApprovalModal() {
+            const selected = Array.from(document.querySelectorAll('.phase-checkbox:checked'))
+                .map(cb => parseInt(cb.dataset.index));
+            
+            if (selected.length === 0) return;
+
+            const phaseList = document.getElementById('bulkPhaseList');
+            phaseList.innerHTML = selected.map(index => {
+                const phase = phasesData[index];
+                return `<li><strong>${phase.name}</strong> (${phase.status})</li>`;
+            }).join('');
+
+            document.getElementById('bulkCount').textContent = selected.length;
+            document.getElementById('bulkApprovalModal').classList.add('active');
+        }
+
+        function closeBulkApprovalModal() {
+            document.getElementById('bulkApprovalModal').classList.remove('active');
+        }
+
+        function processBulkApproval() {
+            const selected = Array.from(document.querySelectorAll('.phase-checkbox:checked'))
+                .map(cb => parseInt(cb.dataset.index));
+            
+            const selectedPhases = selected.map(index => phasesData[index]);
+            
+            const repoUrl = 'https://github.com/webwakaagent1/webwaka-execution-control';
+            const issueTitle = encodeURIComponent(`Bulk Approval: ${selectedPhases.length} Phases`);
+            const phasesList = selectedPhases.map(p => `- ${p.name}`).join('\\n');
+            const approveCommands = selectedPhases.map(p => `/approve ${p.name}`).join('\\n');
+            
+            const issueBody = encodeURIComponent(`## Bulk Approval Request
+
+**Number of phases:** ${selectedPhases.length}
+
+**Phases to approve:**
+${phasesList}
+
+### Approval
+
+I have reviewed all phase deliverables and confirm that all exit criteria have been met for each phase.
+
+**Approved by:** @webwakaagent1
+**Approval date:** ${new Date().toISOString().split('T')[0]}
+
+**Notes:**
+<!-- Add any additional comments here -->
+
+---
+
+${approveCommands}`);
+            
+            const issueUrl = `${repoUrl}/issues/new?title=${issueTitle}&body=${issueBody}&labels=approval,bulk-approval`;
+            window.open(issueUrl, '_blank');
+            closeBulkApprovalModal();
+        }
+
+        // Auto-refresh functionality
+        function startAutoRefresh() {
+            let countdown = 30;
+            
+            refreshInterval = setInterval(() => {
+                loadPhases();
+                countdown = 30;
+            }, 30000);
+
+            countdownInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('countdown').textContent = countdown;
+                if (countdown <= 0) countdown = 30;
+            }, 1000);
+        }
+
+        // Initialize
+        loadPhases();
+        startAutoRefresh();
+    </script>
+</body>
+</html>
