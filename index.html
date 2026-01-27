@@ -19,7 +19,7 @@
         }
         
         .container {
-            max-width: 800px;
+            max-width: 1200px;
             margin: 0 auto;
         }
         
@@ -35,6 +35,18 @@
             color: #1a202c;
             font-size: 32px;
             margin-bottom: 8px;
+        }
+        
+        h2 {
+            color: #1a202c;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        
+        h3 {
+            color: #1a202c;
+            font-size: 20px;
+            margin: 24px 0 16px 0;
         }
         
         .subtitle {
@@ -67,9 +79,24 @@
             color: #2c5282;
         }
         
+        .auto-refresh-indicator {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #4a5568;
+            margin-left: 12px;
+        }
+        
+        .auto-refresh-indicator.active {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
         .phase-info {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 16px;
             margin: 24px 0;
         }
@@ -131,10 +158,15 @@
             color: white;
         }
         
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #5568d3;
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .btn-secondary {
@@ -145,6 +177,11 @@
         
         .btn-secondary:hover {
             background: #cbd5e0;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
         }
         
         .loading {
@@ -180,6 +217,7 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            overflow-y: auto;
         }
         
         .modal.active {
@@ -190,8 +228,11 @@
             background: white;
             border-radius: 12px;
             padding: 32px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 20px;
         }
         
         .modal-title {
@@ -217,25 +258,124 @@
             font-weight: 600;
         }
         
-        .input-group input {
+        .input-group input, .input-group textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e2e8f0;
             border-radius: 6px;
             font-size: 16px;
+            font-family: inherit;
         }
         
-        .input-group input:focus {
+        .input-group input:focus, .input-group textarea:focus {
             outline: none;
             border-color: #667eea;
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        
+        .history-table th {
+            background: #f7fafc;
+            padding: 12px;
+            text-align: left;
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .history-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .detail-section {
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+        
+        .detail-section h4 {
+            color: #1a202c;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .detail-section p {
+            color: #4a5568;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .tab-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #718096;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Main Dashboard Card -->
         <div class="card">
-            <h1>WebWaka Project Dashboard</h1>
-            <p class="subtitle">Phase Approval & Status Management</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+                <div>
+                    <h1>WebWaka Project Dashboard</h1>
+                    <p class="subtitle">Phase Approval & Status Management</p>
+                </div>
+                <div>
+                    <span id="auto-refresh-indicator" class="auto-refresh-indicator">
+                        Auto-refresh: <span id="countdown">30</span>s
+                    </span>
+                </div>
+            </div>
             
             <div id="loading" class="loading">
                 <p>Loading project status...</p>
@@ -245,40 +385,79 @@
             <div id="success" class="success" style="display: none;"></div>
             
             <div id="content" style="display: none;">
-                <span id="status-badge" class="status-badge">Loading...</span>
+                <!-- Tab Navigation -->
+                <div class="tab-container">
+                    <button class="tab active" onclick="switchTab('current')">Current Phase</button>
+                    <button class="tab" onclick="switchTab('history')">Approval History</button>
+                </div>
                 
-                <div class="phase-info">
-                    <div class="info-item">
-                        <div class="info-label">Current Phase</div>
-                        <div class="info-value" id="current-phase">-</div>
+                <!-- Current Phase Tab -->
+                <div id="tab-current" class="tab-content active">
+                    <span id="status-badge" class="status-badge">Loading...</span>
+                    
+                    <div class="phase-info">
+                        <div class="info-item">
+                            <div class="info-label">Current Phase</div>
+                            <div class="info-value" id="current-phase">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Status</div>
+                            <div class="info-value" id="phase-status">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Started</div>
+                            <div class="info-value" id="phase-started">-</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-label">Last Updated</div>
+                            <div class="info-value" id="last-updated">-</div>
+                        </div>
                     </div>
-                    <div class="info-item">
-                        <div class="info-label">Status</div>
-                        <div class="info-value" id="phase-status">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Started</div>
-                        <div class="info-value" id="phase-started">-</div>
-                    </div>
-                    <div class="info-item">
-                        <div class="info-label">Last Updated</div>
-                        <div class="info-value" id="last-updated">-</div>
+                    
+                    <h3>Exit Criteria</h3>
+                    <ul class="criteria-list" id="criteria-list">
+                        <!-- Populated by JavaScript -->
+                    </ul>
+                    
+                    <div style="margin-top: 32px;">
+                        <button class="btn btn-primary" id="approve-btn" onclick="showApprovalModal()">
+                            Approve Phase
+                        </button>
+                        <button class="btn btn-secondary" onclick="showDetailsModal()">
+                            View Details
+                        </button>
+                        <a href="https://github.com/webwakaagent1/webwaka-execution-control" 
+                           class="btn btn-secondary" target="_blank">
+                            View on GitHub
+                        </a>
                     </div>
                 </div>
                 
-                <h3 style="margin: 24px 0 16px 0; color: #1a202c;">Exit Criteria</h3>
-                <ul class="criteria-list" id="criteria-list">
-                    <!-- Populated by JavaScript -->
-                </ul>
-                
-                <div style="margin-top: 32px;">
-                    <button class="btn btn-primary" id="approve-btn" onclick="showApprovalModal()">
-                        Approve Phase
-                    </button>
-                    <a href="https://github.com/webwakaagent1/webwaka-execution-control" 
-                       class="btn btn-secondary" target="_blank">
-                        View on GitHub
-                    </a>
+                <!-- Approval History Tab -->
+                <div id="tab-history" class="tab-content">
+                    <div id="history-loading" class="loading" style="display: none;">
+                        <p>Loading approval history...</p>
+                    </div>
+                    <div id="history-content">
+                        <table class="history-table" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Phase</th>
+                                    <th>Status</th>
+                                    <th>Actor</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                        <div id="history-empty" class="empty-state" style="display: none;">
+                            <div class="empty-state-icon">📋</div>
+                            <p>No approval history yet</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -287,18 +466,28 @@
     <!-- Approval Modal -->
     <div id="approval-modal" class="modal">
         <div class="modal-content">
-            <h2 class="modal-title">Approve Phase?</h2>
+            <h2 class="modal-title">Approve Phase</h2>
             <div class="modal-body">
-                <p>By approving, you confirm:</p>
-                <ul style="margin: 16px 0; padding-left: 20px;">
-                    <li>All exit criteria are met</li>
-                    <li>All documents have been reviewed</li>
-                    <li>Ready to proceed to next phase</li>
-                </ul>
+                <p><strong>Phase:</strong> <span id="modal-phase-name">-</span></p>
+                <p><strong>Status:</strong> <span id="modal-phase-status">-</span></p>
+                
+                <div class="detail-section" style="margin-top: 16px;">
+                    <h4>By approving, you confirm:</h4>
+                    <ul style="padding-left: 20px; margin-top: 8px;">
+                        <li>All exit criteria are met</li>
+                        <li>All documents have been reviewed</li>
+                        <li>Ready to proceed to next phase</li>
+                    </ul>
+                </div>
                 
                 <div class="input-group">
-                    <label for="approval-code">Approval Code</label>
-                    <input type="text" id="approval-code" placeholder="Enter code sent to your email">
+                    <label for="approver-email">Your Email (for notification)</label>
+                    <input type="email" id="approver-email" placeholder="founder@webwaka.com">
+                </div>
+                
+                <div class="input-group">
+                    <label for="approval-notes">Approval Notes (optional)</label>
+                    <textarea id="approval-notes" rows="3" placeholder="Add any notes or comments..."></textarea>
                 </div>
             </div>
             <div>
@@ -312,11 +501,70 @@
         </div>
     </div>
     
+    <!-- Details Modal -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Phase Details</h2>
+            <div class="modal-body">
+                <div class="detail-section">
+                    <h4>Phase Information</h4>
+                    <p><strong>Phase:</strong> <span id="detail-phase">-</span></p>
+                    <p><strong>Status:</strong> <span id="detail-status">-</span></p>
+                    <p><strong>Started:</strong> <span id="detail-started">-</span></p>
+                    <p><strong>Last Updated:</strong> <span id="detail-updated">-</span></p>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Exit Criteria</h4>
+                    <ul id="detail-criteria" style="padding-left: 20px;">
+                        <!-- Populated by JavaScript -->
+                    </ul>
+                </div>
+                
+                <div class="detail-section">
+                    <h4>Key Documents</h4>
+                    <ul style="padding-left: 20px;">
+                        <li><a href="https://github.com/webwakaagent1/webwaka-execution-control/blob/main/EXECUTION_LEDGER.md" target="_blank">EXECUTION_LEDGER.md</a></li>
+                        <li><a href="https://github.com/webwakaagent1/webwaka-execution-control/blob/main/GOVERNANCE.md" target="_blank">GOVERNANCE.md</a></li>
+                        <li><a href="https://github.com/webwakaagent1/webwaka-execution-control/blob/main/EXECUTION_PHASES.md" target="_blank">EXECUTION_PHASES.md</a></li>
+                        <li><a href="https://www.notion.so/2f5fb70870b58187a44af7ec2dd5fe44" target="_blank">Notion Documentation Index</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div>
+                <button class="btn btn-secondary" onclick="closeDetailsModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- History Detail Modal -->
+    <div id="history-detail-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Approval Details</h2>
+            <div class="modal-body" id="history-detail-content">
+                <!-- Populated by JavaScript -->
+            </div>
+            <div>
+                <button class="btn btn-secondary" onclick="closeHistoryDetailModal()">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // GitHub API configuration
         const GITHUB_OWNER = 'webwakaagent1';
         const GITHUB_REPO = 'webwaka-execution-control';
         const LEDGER_PATH = 'EXECUTION_LEDGER.md';
+        
+        // Auto-refresh configuration
+        const REFRESH_INTERVAL = 30; // seconds
+        let refreshTimer = null;
+        let countdownTimer = null;
+        let countdownSeconds = REFRESH_INTERVAL;
         
         // Phase 0 exit criteria
         const PHASE_0_CRITERIA = [
@@ -330,18 +578,58 @@
             'Phase 1 execution prompt ready'
         ];
         
-        // Load project status on page load
-        window.addEventListener('DOMContentLoaded', loadProjectStatus);
+        // Global state
+        let currentLedgerData = null;
+        let approvalHistory = [];
         
-        async function loadProjectStatus() {
+        // Load project status on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadProjectStatus();
+            startAutoRefresh();
+        });
+        
+        function startAutoRefresh() {
+            // Clear any existing timers
+            if (refreshTimer) clearInterval(refreshTimer);
+            if (countdownTimer) clearInterval(countdownTimer);
+            
+            // Reset countdown
+            countdownSeconds = REFRESH_INTERVAL;
+            
+            // Start countdown timer
+            countdownTimer = setInterval(() => {
+                countdownSeconds--;
+                document.getElementById('countdown').textContent = countdownSeconds;
+                
+                if (countdownSeconds <= 0) {
+                    countdownSeconds = REFRESH_INTERVAL;
+                }
+            }, 1000);
+            
+            // Start refresh timer
+            refreshTimer = setInterval(() => {
+                loadProjectStatus(true);
+                countdownSeconds = REFRESH_INTERVAL;
+            }, REFRESH_INTERVAL * 1000);
+            
+            // Update indicator
+            document.getElementById('auto-refresh-indicator').classList.add('active');
+        }
+        
+        async function loadProjectStatus(isAutoRefresh = false) {
             try {
+                if (!isAutoRefresh) {
+                    document.getElementById('loading').style.display = 'block';
+                }
+                
                 // Fetch EXECUTION_LEDGER.md from GitHub
                 const response = await fetch(
-                    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${LEDGER_PATH}`
+                    `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${LEDGER_PATH}`,
+                    { cache: 'no-cache' }
                 );
                 
                 if (!response.ok) {
-                    throw new Error('Failed to fetch project status');
+                    throw new Error('Failed to fetch ledger');
                 }
                 
                 const data = await response.json();
@@ -361,94 +649,233 @@
                     }
                 });
                 
+                currentLedgerData = { frontmatter, content };
+                
                 // Update UI
-                document.getElementById('current-phase').textContent = frontmatter.current_phase || 'Unknown';
-                document.getElementById('phase-status').textContent = frontmatter.phase_status || 'Unknown';
-                document.getElementById('last-updated').textContent = frontmatter.last_updated || 'Unknown';
-                document.getElementById('phase-started').textContent = '2026-01-26'; // From ledger
+                updateCurrentPhaseUI(frontmatter);
                 
-                // Update status badge
-                const statusBadge = document.getElementById('status-badge');
-                const status = frontmatter.phase_status;
-                statusBadge.textContent = `${frontmatter.current_phase} - ${status}`;
+                // Parse approval history
+                parseApprovalHistory(content);
                 
-                if (status === 'complete') {
-                    statusBadge.className = 'status-badge status-complete';
-                } else if (status === 'approved') {
-                    statusBadge.className = 'status-badge status-approved';
-                } else {
-                    statusBadge.className = 'status-badge status-in-progress';
+                // Show content, hide loading
+                if (!isAutoRefresh) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('content').style.display = 'block';
                 }
                 
-                // Populate criteria list
-                const criteriaList = document.getElementById('criteria-list');
+            } catch (error) {
+                console.error('Error loading project status:', error);
+                if (!isAutoRefresh) {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').textContent = 
+                        'Failed to load project status. Please try again later.';
+                    document.getElementById('error').style.display = 'block';
+                }
+            }
+        }
+        
+        function updateCurrentPhaseUI(frontmatter) {
+            document.getElementById('current-phase').textContent = frontmatter.current_phase || 'Unknown';
+            document.getElementById('phase-status').textContent = frontmatter.phase_status || 'Unknown';
+            document.getElementById('last-updated').textContent = frontmatter.last_updated || 'Unknown';
+            document.getElementById('phase-started').textContent = '2026-01-26';
+            
+            // Update status badge
+            const statusBadge = document.getElementById('status-badge');
+            const status = frontmatter.phase_status;
+            statusBadge.textContent = `${frontmatter.current_phase} - ${status}`;
+            
+            if (status === 'complete') {
+                statusBadge.className = 'status-badge status-complete';
+            } else if (status === 'approved') {
+                statusBadge.className = 'status-badge status-approved';
+            } else {
+                statusBadge.className = 'status-badge status-in-progress';
+            }
+            
+            // Populate criteria list (only once)
+            const criteriaList = document.getElementById('criteria-list');
+            if (criteriaList.children.length === 0) {
                 PHASE_0_CRITERIA.forEach(criterion => {
                     const li = document.createElement('li');
                     li.className = 'criteria-item';
                     li.textContent = criterion;
                     criteriaList.appendChild(li);
                 });
-                
-                // Show content, hide loading
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-                
-                // Disable approve button if already approved
-                if (status === 'approved') {
-                    const approveBtn = document.getElementById('approve-btn');
-                    approveBtn.disabled = true;
-                    approveBtn.textContent = 'Already Approved';
-                    approveBtn.style.opacity = '0.5';
-                    approveBtn.style.cursor = 'not-allowed';
-                }
-                
-            } catch (error) {
-                console.error('Error loading project status:', error);
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('error').textContent = 
-                    'Failed to load project status. Please try again later.';
-                document.getElementById('error').style.display = 'block';
+            }
+            
+            // Disable approve button if already approved
+            const approveBtn = document.getElementById('approve-btn');
+            if (status === 'approved') {
+                approveBtn.disabled = true;
+                approveBtn.textContent = 'Already Approved';
+            } else {
+                approveBtn.disabled = false;
+                approveBtn.textContent = 'Approve Phase';
             }
         }
         
+        function parseApprovalHistory(content) {
+            approvalHistory = [];
+            
+            // Parse history entries
+            const historyRegex = /### \[([\d-]+)\] (Phase \d+) Status Update[\s\S]*?\*\*Phase:\*\* (.*?)\s*\n\*\*Status:\*\* (.*?)\s*\n\*\*Actor:\*\* (.*?)\s*\n\n(.*?)(?=\n---|\n##|$)/g;
+            
+            let match;
+            while ((match = historyRegex.exec(content)) !== null) {
+                approvalHistory.push({
+                    date: match[1],
+                    phase: match[3].trim(),
+                    status: match[4].trim(),
+                    actor: match[5].trim(),
+                    details: match[6].trim()
+                });
+            }
+            
+            // Update history table
+            updateHistoryTable();
+        }
+        
+        function updateHistoryTable() {
+            const tbody = document.getElementById('history-tbody');
+            const emptyState = document.getElementById('history-empty');
+            
+            tbody.innerHTML = '';
+            
+            if (approvalHistory.length === 0) {
+                emptyState.style.display = 'block';
+                document.getElementById('history-table').style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                document.getElementById('history-table').style.display = 'table';
+                
+                approvalHistory.forEach((entry, index) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${entry.date}</td>
+                        <td>${entry.phase}</td>
+                        <td><span class="status-badge status-${entry.status}">${entry.status}</span></td>
+                        <td>${entry.actor}</td>
+                        <td><button class="btn btn-secondary btn-small" onclick="showHistoryDetail(${index})">View Details</button></td>
+                    `;
+                });
+            }
+        }
+        
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+        
         function showApprovalModal() {
+            if (!currentLedgerData) return;
+            
+            const frontmatter = currentLedgerData.frontmatter;
+            document.getElementById('modal-phase-name').textContent = frontmatter.current_phase || '-';
+            document.getElementById('modal-phase-status').textContent = frontmatter.phase_status || '-';
+            
             document.getElementById('approval-modal').classList.add('active');
         }
         
         function closeApprovalModal() {
             document.getElementById('approval-modal').classList.remove('active');
-            document.getElementById('approval-code').value = '';
+            document.getElementById('approver-email').value = '';
+            document.getElementById('approval-notes').value = '';
+        }
+        
+        function showDetailsModal() {
+            if (!currentLedgerData) return;
+            
+            const frontmatter = currentLedgerData.frontmatter;
+            document.getElementById('detail-phase').textContent = frontmatter.current_phase || '-';
+            document.getElementById('detail-status').textContent = frontmatter.phase_status || '-';
+            document.getElementById('detail-started').textContent = '2026-01-26';
+            document.getElementById('detail-updated').textContent = frontmatter.last_updated || '-';
+            
+            // Populate criteria
+            const criteriaList = document.getElementById('detail-criteria');
+            criteriaList.innerHTML = '';
+            PHASE_0_CRITERIA.forEach(criterion => {
+                const li = document.createElement('li');
+                li.textContent = criterion;
+                criteriaList.appendChild(li);
+            });
+            
+            document.getElementById('details-modal').classList.add('active');
+        }
+        
+        function closeDetailsModal() {
+            document.getElementById('details-modal').classList.remove('active');
+        }
+        
+        function showHistoryDetail(index) {
+            const entry = approvalHistory[index];
+            const content = document.getElementById('history-detail-content');
+            
+            content.innerHTML = `
+                <div class="detail-section">
+                    <h4>Approval Information</h4>
+                    <p><strong>Date:</strong> ${entry.date}</p>
+                    <p><strong>Phase:</strong> ${entry.phase}</p>
+                    <p><strong>Status:</strong> ${entry.status}</p>
+                    <p><strong>Actor:</strong> ${entry.actor}</p>
+                </div>
+                <div class="detail-section">
+                    <h4>Details</h4>
+                    <p>${entry.details || 'No additional details'}</p>
+                </div>
+            `;
+            
+            document.getElementById('history-detail-modal').classList.add('active');
+        }
+        
+        function closeHistoryDetailModal() {
+            document.getElementById('history-detail-modal').classList.remove('active');
         }
         
         async function confirmApproval() {
-            const code = document.getElementById('approval-code').value.trim();
+            const email = document.getElementById('approver-email').value.trim();
+            const notes = document.getElementById('approval-notes').value.trim();
             
-            if (!code) {
-                alert('Please enter the approval code sent to your email');
+            if (!email) {
+                alert('Please enter your email address');
                 return;
             }
             
-            // In a real implementation, this would:
-            // 1. Verify the approval code
-            // 2. Create a GitHub issue with founder-approved label
-            // 3. Trigger the ledger update workflow
+            if (!currentLedgerData) {
+                alert('Unable to process approval. Please refresh the page.');
+                return;
+            }
             
-            // For now, show instructions
+            const phase = currentLedgerData.frontmatter.current_phase;
+            
+            // Close modal
             closeApprovalModal();
             
+            // Show success message with instructions
             const successDiv = document.getElementById('success');
             successDiv.innerHTML = `
-                <strong>Approval Submitted!</strong><br>
-                To complete the approval process:<br>
-                1. Go to <a href="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/issues/new" target="_blank">GitHub Issues</a><br>
-                2. Create an issue titled "Phase 0 Approval"<br>
-                3. Add label: <code>founder-approved</code><br>
-                4. The automation will handle the rest!
+                <strong>✅ Approval Initiated!</strong><br><br>
+                <strong>Next Steps:</strong><br>
+                1. Go to <a href="https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/issues/new?title=${encodeURIComponent(phase + ' Approval')}&body=${encodeURIComponent('Phase: ' + phase + '\nApprover: ' + email + '\nNotes: ' + notes)}" target="_blank" style="color: #22543d; font-weight: 600;">Create GitHub Issue</a><br>
+                2. Add label: <code style="background: #e2e8f0; padding: 2px 8px; border-radius: 4px;">founder-approved</code><br>
+                3. You will receive an email confirmation once the approval is processed<br><br>
+                <strong>Email notification will be sent to:</strong> ${email}
             `;
             successDiv.style.display = 'block';
             
             // Scroll to success message
-            successDiv.scrollIntoView({ behavior: 'smooth' });
+            successDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            
+            // Auto-hide after 30 seconds
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 30000);
         }
     </script>
 </body>
