@@ -1,10 +1,44 @@
-# WebWaka Approval Dashboard
+# ⚠️ ARCHIVED REPOSITORY
 
-A simple, non-technical web dashboard for approving WebWaka project phases.
+**This repository is ARCHIVED as of January 31, 2026.**
+
+This dashboard was created on **January 27, 2026** to provide a simple web interface for phase approvals during the pre-migration period. It has been superseded by the **Agentic Software Factory** system.
+
+## Historical Context
+
+This dashboard served as a non-technical approval interface for the Founder to review and approve phases during the early days of the WebWaka platform (January 27, 2026).
+
+## Current Status
+
+On **January 31, 2026**, the WebWaka platform transitioned to the **Agentic Software Factory**, a GitHub-native task coordination system. All phase approvals now occur through GitHub Issues and the Agent Factory Kanban board.
+
+**👉 Current Approval System:** [`webwaka-agent-factory`](https://github.com/webwakaagent1/webwaka-agent-factory)
+
+## Why This Repository Is Archived
+
+1. **Superseded:** The Agentic Software Factory provides superior observability, control, and auditability
+2. **Historical Value:** This dashboard represents an early approach to governance that informed the current system
+3. **Avoid Confusion:** The current approval workflow is GitHub-native
+
+## For Current Platform Information
+
+- **Agent Factory Repository:** [`webwaka-agent-factory`](https://github.com/webwakaagent1/webwaka-agent-factory)
+- **Agent Factory Kanban:** [View Board](https://github.com/users/webwakaagent1/projects/1)
+- **Governance Repository:** [`webwaka-governance`](https://github.com/webwakaagent1/webwaka-governance)
+
+---
+
+**Archived by:** Manus AI (Agentic Software Factory Transition Architect)  
+**Date:** January 31, 2026  
+**Authority:** Founder Authorization
+
+---
+
+# Original README (Historical Reference)
 
 ## Purpose
 
-This dashboard provides a user-friendly interface for the Founder to:
+This dashboard provided a user-friendly interface for the Founder to:
 - View current phase status
 - Review exit criteria
 - Approve phase completion
@@ -20,33 +54,7 @@ This dashboard provides a user-friendly interface for the Founder to:
 
 ## Access
 
-**Dashboard URL:** https://webwakaagent1.github.io/webwaka-approval-dashboard/
-
-## How to Use
-
-### For Founder:
-
-1. **View Status**
-   - Open the dashboard URL
-   - See current phase and status
-   - Review exit criteria
-
-2. **Approve Phase**
-   - Click "Approve Phase" button
-   - Enter approval code (sent to email)
-   - Click "Confirm Approval"
-   - Follow instructions to complete approval
-
-### For Agents:
-
-1. **Update Status**
-   - Status updates automatically from `EXECUTION_LEDGER.md`
-   - No manual dashboard updates needed
-
-2. **Deploy Changes**
-   - Push to `main` branch
-   - GitHub Pages auto-deploys
-   - Changes live in ~1 minute
+**Dashboard URL:** https://webwakaagent1.github.io/webwaka-approval-dashboard/ (no longer maintained)
 
 ## Technical Details
 
@@ -54,30 +62,3 @@ This dashboard provides a user-friendly interface for the Founder to:
 - **Data Source:** GitHub API (reads `EXECUTION_LEDGER.md`)
 - **Authentication:** None required (public read access)
 - **Updates:** Real-time on page load
-
-## Development
-
-To test locally:
-
-```bash
-# Serve locally
-python3 -m http.server 8000
-
-# Open browser
-open http://localhost:8000
-```
-
-## Deployment
-
-Automatic via GitHub Pages:
-1. Push to `main` branch
-2. GitHub Pages builds automatically
-3. Live at: https://webwakaagent1.github.io/webwaka-approval-dashboard/
-
-## Future Enhancements
-
-- [ ] Email approval code verification
-- [ ] Automatic GitHub issue creation
-- [ ] Phase transition history view
-- [ ] Cost dashboard integration
-- [ ] Mobile app version
